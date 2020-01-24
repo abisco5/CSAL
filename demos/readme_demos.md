@@ -149,6 +149,44 @@ Before using the example on your target, check the following:
 
       [*] Kernel debugging
           [*] Compile the kernel with debug info
+         
+Building a custom kernel from Debian kernel source
+--------------------------------------------------
+This section describes the simplest possible procedure to build a custom kernel the "Debian way". It is assumed that user is somewhat familiar with kernel configuration and build process. If that's not the case, it is recommended to consult the kernel documentation and many excellent online resources dedicated to it.
+
+The easiest way to build a custom kernel (the kernel with the configuration different from the one used in the official packages) from the Debian kernel source is to use the linux-source package and the make deb-pkg target. First, prepare the kernel tree:
+
+      $ apt-get install linux-source-4.3
+      $ tar xaf /usr/src/linux-source-4.3.tar.xz
+      $ cd linux-source-4.3
+The kernel now needs to be configured, that is you have to set the kernel options and select the drivers which are going to be included, either as built-in, or as external modules.
+
+It is possible to reuse an old configuration file by placing it as a .config file in the top-level directory. Alternately, you can use the default configuration for the architecture (make defconfig) or generate a configuration based on the running kernel and the currently loaded modules (make localmodconfig).
+
+If you reuse a Debian kernel config file, you may need to disable module signing (`scripts/config --disable MODULE_SIG`) or enable signing with an ephemeral key (`scripts/config --set-str MODULE_SIG_KEY certs/signing_key.pem`). The build will use less time and disk space (see Section 4.2.1.1, “Disk space requirements”) if debug information is disabled (`scripts/config --disable DEBUG_INFO`). Debuginfo is only needed if you plan to use binary object tools like crash, kgdb, and SystemTap on the kernel.
+
+The kernel build infrastructure offers a number of targets, which invoke different configuration frontends. For example, one can use console-based menu configuration by invoking the command
+
+      $ make nconfig
+Instead of nconfig one can use oldconfig (text-based line-by-line configuration frontend) or xconfig (graphical configuration frontend). Note that different frontends may require different additional libraries and utilities to be installed to function properly. For example, the nconfig frontend requires the ncurses library, which at time of writing is provided by the libncurses5-dev package.
+
+After the configuration process is finished, the new or updated kernel configuration will be stored in .config file in the top-level directory. The build is started using the commands
+
+      $ make clean
+      $ make deb-pkg
+As a result of the build, a custom kernel package linux-image-3.2.19_3.2.19-1_i386.deb (name will reflect the version of the kernel and build number) will be created in the directory one level above the top of the tree. It may be installed using dpkg just as any other package:
+
+      $ dpkg -i ../linux-image-3.2.19_3.2.19-1_i386.deb
+
+This command will unpack the kernel, generate the initrd if necessary (see Chapter 7, Managing the initial ramfs (initramfs) archive for details), and configure the bootloader to make the newly installed kernel the default one. If this command completed without any problems, you can reboot using the
+
+      $ shutdown -r now
+command to boot the new kernel.
+
+For much more information about bootloaders and their configuration please check their documentation, which can be accessed using the commands man lilo, man lilo.conf, man grub, and so on. You can also look for documentation in the /usr/share/doc/package directories, with package being the name of the package involved.
+
+https://kernel-team.pages.debian.net/kernel-handbook/ch-common-tasks.html
+
 
 Juno Platform - Additional Configuration when using the CSAL and Demos
 ----------------------------------------------------------------------
@@ -617,3 +655,4 @@ Known issues and troubleshooting
       Couldn't find size of 'kernel_dump.bin' - perhaps the file is missing or unreadable
 
   then `kernel_dump.bin` is missing or unreadable.  (Re-)create `kernel_dump.bin` as described earlier.
+
