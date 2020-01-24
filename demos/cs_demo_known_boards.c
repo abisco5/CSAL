@@ -403,6 +403,181 @@ static int do_registration_juno(struct cs_devices_t *devices)
 
     return 0;
 }
+/* check LIB_DEVICE_UNSUPPORTED */
+static int do_registration_juno_r2(struct cs_devices_t *devices)
+{
+    enum { A53_0, A53_1, A53_2, A53_3, A72_0, A72_1 };
+    cs_device_t rep, etr, etf, fun_main, fun_a53, fun_a72	, stm, tpiu,
+        sys_cti;
+    cs_device_t r2_fun_scp, r2_fun_common, r2_etf_scp;
+#ifdef LIB_DEVICE_UNSUPPORTED
+    cs_device_t r2_cti_2, ela_a53, ela_a72;
+#endif
+    int i;
+
+    if (registration_verbose)
+        printf("CSDEMO: Registering CoreSight devices...\n");
+    cs_register_romtable(0x20000000);
+
+    if (registration_verbose)
+        printf("CSDEMO: Registering CPU affinities...\n");
+
+    /* CTI affinities */
+    cs_device_set_affinity(cs_device_register(0x22020000), A72_0);
+    cs_device_set_affinity(cs_device_register(0x22120000), A72_1);
+    cs_device_set_affinity(cs_device_register(0x23020000), A53_0);
+    cs_device_set_affinity(cs_device_register(0x23120000), A53_1);
+    cs_device_set_affinity(cs_device_register(0x23220000), A53_2);
+    cs_device_set_affinity(cs_device_register(0x23320000), A53_3);
+
+    /* PMU affinities */
+    cs_device_set_affinity(cs_device_register(0x22030000), A72_0);
+    cs_device_set_affinity(cs_device_register(0x22130000), A72_1);
+    cs_device_set_affinity(cs_device_register(0x23030000), A53_0);
+    cs_device_set_affinity(cs_device_register(0x23130000), A53_1);
+    cs_device_set_affinity(cs_device_register(0x23230000), A53_2);
+    cs_device_set_affinity(cs_device_register(0x23330000), A53_3);
+
+    /* ETMv4 affinities */
+    cs_device_set_affinity(cs_device_register(0x22040000), A72_0);
+    cs_device_set_affinity(cs_device_register(0x22140000), A72_1);
+    cs_device_set_affinity(cs_device_register(0x23040000), A53_0);
+    cs_device_set_affinity(cs_device_register(0x23140000), A53_1);
+    cs_device_set_affinity(cs_device_register(0x23240000), A53_2);
+    cs_device_set_affinity(cs_device_register(0x23340000), A53_3);
+
+    if (registration_verbose)
+        printf("CSDEMO: Registering trace-bus connections...\n");
+
+    /* funnels in clusters */
+    fun_a72 = cs_device_get(0x220C0000);
+    cs_atb_register(cs_cpu_get_device(A72_0, CS_DEVCLASS_SOURCE), 0,
+                    fun_a72, 0);
+    cs_atb_register(cs_cpu_get_device(A72_1, CS_DEVCLASS_SOURCE), 0,
+                    fun_a72, 1);
+
+    fun_a53 = cs_device_get(0x230C0000);
+    cs_atb_register(cs_cpu_get_device(A53_0, CS_DEVCLASS_SOURCE), 0,
+                    fun_a53, 0);
+    cs_atb_register(cs_cpu_get_device(A53_1, CS_DEVCLASS_SOURCE), 0,
+                    fun_a53, 1);
+    cs_atb_register(cs_cpu_get_device(A53_2, CS_DEVCLASS_SOURCE), 0,
+                    fun_a53, 2);
+    cs_atb_register(cs_cpu_get_device(A53_3, CS_DEVCLASS_SOURCE), 0,
+                    fun_a53, 3);
+
+
+    /*common setup */
+    fun_main = cs_device_get(0x20040000);
+    stm = cs_device_get(0x20100000);
+    etf = cs_device_get(0x20010000);
+    rep = cs_device_get(0x20120000);
+    etr = cs_device_get(0x20070000);
+    tpiu = cs_device_get(0x20030000);
+
+
+    /* look for r1 extras */
+    r2_fun_scp = cs_device_get(0x20130000);
+    /*if (r1_fun_scp == 0) {
+        /* juno r0 */
+      /*  cs_atb_register(fun_a53, 0, fun_main, 0);
+        cs_atb_register(fun_a57, 0, fun_main, 1);
+        cs_atb_register(stm, 0, fun_main, 2);
+
+        cs_atb_register(fun_main, 0, etf, 0);
+
+        cs_atb_register(etf, 0, rep, 0);
+
+
+    } else {
+        /* juno r1 */
+        r2_fun_common = cs_device_get(0x20150000);
+        r2_etf_scp = cs_device_get(0x20140000);
+
+#ifdef LIB_DEVICE_UNSUPPORTED
+        r2_cti_2 = cs_device_get(0x20160000);
+        ela_a53 = cs_device_get(0x230D0000);
+        ela_a72 = cs_device_get(0x220D0000);
+#endif
+
+
+        cs_atb_register(fun_a53, 0, fun_main, 0);
+        cs_atb_register(fun_a72, 0, fun_main, 1);
+
+        cs_atb_register(stm, 0, r2_fun_scp, 0);
+
+        cs_atb_register(fun_main, 0, etf, 0);
+        cs_atb_register(r2_fun_scp, 0, r2_etf_scp, 0);
+
+        cs_atb_register(etf, 0, r2_fun_common, 0);
+        cs_atb_register(r2_etf_scp, 0, r2_fun_common, 1);
+
+        cs_atb_register(r2_fun_common, 0, rep, 0);
+
+        /* ELAs can be connected to CTI2 here - but lib doesn't support them yet. */
+
+        devices->itm_etb = r2_etf_scp;
+    //}
+
+    cs_atb_register(rep, 1, etr, 0);
+    cs_atb_register(rep, 0, tpiu, 0);
+
+    /* populate the devices structure */
+    devices->itm = stm;
+    devices->etb = etf;		/* core output through main etf */
+
+    /* STM needs to init master address and master 0 by default
+       All Juno cores see a single master @ 0, but other select bits
+       ensure different cores and security options result in different
+       master IDs in output.
+    */
+    cs_stm_config_master(stm, 0, 0x28000000);
+    cs_stm_select_master(stm, 0);
+
+    /* Connect system CTI to devices */
+    sys_cti = cs_device_register(0x20020000);
+    cs_cti_connect_trigsrc(etf, CS_TRIGOUT_ETB_FULL,
+                           cs_cti_trigsrc(sys_cti, 0));
+    cs_cti_connect_trigsrc(etf, CS_TRIGOUT_ETB_ACQCOMP,
+                           cs_cti_trigsrc(sys_cti, 1));
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 7), etf,
+                           CS_TRIGIN_ETB_FLUSHIN);
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 6), etf,
+                           CS_TRIGIN_ETB_TRIGIN);
+
+    cs_cti_connect_trigsrc(etr, CS_TRIGOUT_ETB_FULL,
+                           cs_cti_trigsrc(sys_cti, 2));
+    cs_cti_connect_trigsrc(etr, CS_TRIGOUT_ETB_ACQCOMP,
+                           cs_cti_trigsrc(sys_cti, 3));
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 0), etr,
+                           CS_TRIGIN_ETB_FLUSHIN);
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 1), etr,
+                           CS_TRIGIN_ETB_TRIGIN);
+
+    cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTSPTE,
+                           cs_cti_trigsrc(sys_cti, 4));
+    cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTSW,
+                           cs_cti_trigsrc(sys_cti, 5));
+    cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTHETE,
+                           cs_cti_trigsrc(sys_cti, 6));
+    cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_ASYNCOUT,
+                           cs_cti_trigsrc(sys_cti, 7));
+
+    /* edges of the CTI outputs are connected to separate HW events in STM */
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 4), stm, CS_TRIGIN_STM_HWEVENT_0);	/* rising edge */
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 4), stm, CS_TRIGIN_STM_HWEVENT_1);	/* falling edge */
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 5), stm, CS_TRIGIN_STM_HWEVENT_2);	/* rising edge */
+    cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 5), stm, CS_TRIGIN_STM_HWEVENT_3);	/* falling edge */
+
+    /* the linux board probe does not set up CPUIDs correctly for Juno -
+       hardcode here for both linux and BAREMETAL. */
+    for (i = 0; i < 4; i++)
+        devices->cpu_id[i] = 0xD03;
+    for (i = 4; i < 6; i++)
+        devices->cpu_id[i] = 0xD08;
+
+    return 0;
+}
 
 static int do_registration_altera(struct cs_devices_t *devices)
 {
@@ -525,7 +700,11 @@ const struct board known_boards[] = {
         .do_registration = do_registration_juno,
         .n_cpu = 6,
         .hardware = "Juno",
-    }, {
+    },{
+    	.do_registration = do_registration_juno_r2,
+		.n_cpu = 6,
+		.hardware= "Juno r2",
+    },{
         .do_registration = do_registration_altera,
         .n_cpu = 2,
         .hardware = "Altera SOCFPGA",
