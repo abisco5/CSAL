@@ -24,7 +24,7 @@
 
 int main(int argc, char **argv)
 {
-    unsigned long romAddr = 0x10880000;	/* arndale */
+    unsigned long romAddr = 0x20000000;	/* Juno_r2 */
     int do_custom = 0;
     int argidx = 1;
     unsigned long exclude_lo, exclude_hi;
