@@ -84,7 +84,7 @@ int main(int argc, char **argv)
                 printf
                     ("** CSLS: Usage\n   csls [{-snowball} | {-romaddr 0xNNNNNNNN {-exclude <addr_lo> <addr_hi>}*}]\n   No options uses default romaddress 0x10880000 for Arndale platform\n");
                 printf
-                    ("    -snowball - uses snowball rom address - standalone option\n    -romaddr 0xNNNNNNNN uses 0xNNNNNNNN as ROM Address\n");
+                    ("    -snowball - uses snowball rom address - standalone option\n    -romaddr 0xNNNNNNNN uses 0xNNNNNNNN as ROM Address (for Juno r2 0x20000000)\n");
                 printf
                     ("    -exclude <addr_low> <addr_hi>  - exclude range from logging. Can be used multiple times with -romaddr. <addr> in 0xNNNNNNNN format\n\n");
                 return EXIT_SUCCESS;
@@ -103,9 +103,9 @@ int main(int argc, char **argv)
         /* custom platform */
         cs_register_romtable(romAddr);
     } else {
-        /* Arndale : Exclude the Cortex-A5s */
-        cs_exclude_range(0x108A0000, 0x108C0000);
-        cs_register_romtable(0x10880000);
+        /* Juno r2*/
+        //cs_exclude_range(0x108A0000, 0x108C0000);
+        cs_register_romtable(0x20000000);
     }
     printf("** CSLS: done listing CoreSight config\n");
     cs_shutdown();
