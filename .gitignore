@@ -60,3 +60,7 @@ bin/
 *.VC.VC.opendb
 *.iobj
 *.ipdb
+
+# ignore build and demo directories
+build/
+demos/
