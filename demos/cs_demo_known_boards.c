@@ -703,7 +703,7 @@ const struct board known_boards[] = {
     },{
     	.do_registration = do_registration_juno_r2,
 		.n_cpu = 6,
-		.hardware= "Juno r2",
+		.hardware= "Juno_r2",
     },{
         .do_registration = do_registration_altera,
         .n_cpu = 2,
