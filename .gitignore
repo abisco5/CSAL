@@ -64,3 +64,5 @@ bin/
 # ignore build and demo directories
 build/
 demos/
+# ignore IDE config
+.project
