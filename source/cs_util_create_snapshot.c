@@ -182,7 +182,7 @@ int dump_kernel_memory(char const *fn, unsigned long start,
     fd_mem = open("/dev/kmem", O_RDONLY);
     if (fd_mem >= 0) {
         local =
-            (unsigned char *) mmap(NULL, mapsize, PROT_READ, MAP_SHARED,
+            (unsigned char *) mmap(0, mapsize, PROT_READ, MAP_SHARED,
                                    fd_mem, mapstart);
     } else {
         printf("can't open /dev/kmem, trying /dev/mem instead...\n");
